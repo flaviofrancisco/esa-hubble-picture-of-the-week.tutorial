@@ -116,3 +116,8 @@ public [dataset inventory](https://data.casus.science/7716/dashboard/#/nc/view/a
 This is where all the metadata of all the datasets (from their DATASET.json files) is collected in a convenient, 
 searchable and filterable web browser view. This is where one can search for specific properties resp. the datasets 
 that match those properites.
+
+# Histogram
+
+![histogram.png](histogram.png)
+
