@@ -1,0 +1,1 @@
+d70fc1e1-648a-416c-8c21-34d09ed6795b autoenable=true bucket=tue-ffr-nl chunk=100M datacenter=US encryption=none host=s3.casus.science name=mys3 port=9000 protocol=https requeststyle=path storageclass=STANDARD type=S3 timestamp=1791280251s
