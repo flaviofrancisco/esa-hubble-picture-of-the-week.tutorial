@@ -5,6 +5,8 @@ import sys
 import argparse
 import glob
 import json
+import shutil
+import subprocess
 from datetime import datetime
 import hashlib
 
@@ -40,6 +42,36 @@ def as_int_float_or_string(n: str):
     except:
          return n
 
+
+def check_exiftool():
+    executable = shutil.which("exiftool")
+    if executable is None:
+        raise SystemExit(
+            "ERROR: the 'exiftool' binary is missing. Make sure it can be found "
+            "in $PATH. See https://exiftool.org/install.html."
+        )
+
+    try:
+        result = subprocess.run(
+            [executable, "-ver"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        raise SystemExit(
+            f"ERROR: '{executable} -ver' did not finish within 10 seconds."
+        ) from None
+
+    if result.returncode != 0:
+        details = result.stderr.strip() or result.stdout.strip()
+        message = f"ERROR: ExifTool at '{executable}' failed its version check"
+        if details:
+            message += f":\n{details}"
+        raise SystemExit(message)
+
+
 # parse a value from text which is bracketed by start_token and stop_token
 def parse_from_text( text, key, start_token, stop_token, result ):
 
@@ -72,8 +104,17 @@ def extract_from_jpg_file( dirname, prefix="JPG" ):
         print(f"More than one JPG file in dir {dirname}, skip")
         return data
 
+    if not os.path.exists(list[0]):
+        print(
+            f"ERROR: image file {list[0]} is unavailable. "
+            f"If this is a DataLad dataset, retrieve it with 'datalad get {dirname}'.",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
+
     # exaclty one PDF file found, good, let's use it
     try:
+        check_exiftool()
         with exiftool.ExifToolHelper() as et:
             for d in et.get_metadata(list[0]):
                 for k, v in d.items():
@@ -83,9 +124,11 @@ def extract_from_jpg_file( dirname, prefix="JPG" ):
                         subset[k]= json.dumps(v)
                     else:
                         subset[k]= as_int_float_or_string(v)
-    except:
-        print("ERROR: most likely the 'exiftool' binary is missing. Make sure it can be found in $PATH. See https://exiftool.org/install.html, you can download binaries as a fallback.")
-        sys.exit(-1)
+    except FileNotFoundError:
+        raise SystemExit(
+            "ERROR: the 'exiftool' binary could not be started. Make sure it can "
+            "be found in $PATH. See https://exiftool.org/install.html."
+        ) from None
     return data
 
 
